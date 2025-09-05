@@ -44,8 +44,7 @@ jobs:
           echo "${{ secrets.SERVICE_ACCOUNT_JSON }}" > supabase/functions/service-account.json
         shell: bash
 
-      - name: Login to Supabase CLI
-        run: supabase login --access-token "${{ secrets.SUPABASE_ACCESS_TOKEN }}"
+      
 
       - name: Deploy Push Function
         run: |
@@ -55,6 +54,7 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
       - name: Clean up service-account.json
         run: rm supabase/functions/service-account.json
