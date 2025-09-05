@@ -1,0 +1,48 @@
+name: Deploy Supabase Push Function
+
+on:
+  push:
+    branches:
+      - main # Trigger on push to the main branch
+    paths:
+      - 'supabase/functions/push/**' # Only run if changes are in the push function directory
+      - 'supabase/functions/service-account.json' # Or if service account changes
+  workflow_dispatch: # Allows manual triggering from GitHub Actions tab
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Deno (for Supabase Edge Functions)
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x # Use a compatible Deno version
+
+      - name: Install Supabase CLI
+        run: |
+          curl -sL https://supabase.com/cli/install.sh | sh
+          echo "$HOME/.supabase/bin" >> $GITHUB_PATH
+
+      - name: Create service-account.json
+        run: |
+          echo '${{ secrets.SERVICE_ACCOUNT_JSON }}' > supabase/functions/service-account.json
+        shell: bash
+
+      - name: Login to Supabase CLI
+        run: supabase login --access-token "${{ secrets.SUPABASE_ACCESS_TOKEN }}"
+
+      - name: Deploy Push Function
+        run: |
+          supabase functions deploy push \
+            --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} \
+            --no-verify-jwt # Use --no-verify-jwt if your function doesn't require JWT verification
+        env:
+          # Pass environment variables required by your function at runtime
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Clean up service-account.json
+        run: rm supabase/functions/service-account.json
